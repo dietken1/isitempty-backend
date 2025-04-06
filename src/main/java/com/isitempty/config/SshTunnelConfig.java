@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("!serverdb")
+@Profile("serverdb")
 public class SshTunnelConfig {
 
     @Value("${ssh.host:223.130.134.121}")
