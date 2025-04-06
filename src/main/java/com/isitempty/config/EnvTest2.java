@@ -3,10 +3,12 @@ package com.isitempty.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("local")
 public class EnvTest2 {
-    
+
     @Bean
     public CommandLineRunner testEnvMapping() {
         return args -> {
