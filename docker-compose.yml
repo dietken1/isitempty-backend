@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/isitempty-backend:latest
+    container_name: backend
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/isitempty?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SEOUL_KEY=${SEOUL_KEY}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      - MYSQL_DATABASE=isitempty
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
