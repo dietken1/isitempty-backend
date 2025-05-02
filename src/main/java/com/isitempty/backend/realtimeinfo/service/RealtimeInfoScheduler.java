@@ -46,8 +46,8 @@ public class RealtimeInfoScheduler {
         
         // JSON 형식으로 응답을 요청
         String apiUrl = "http://openapi.seoul.go.kr:8088/" + SEOUL_KEY + "/json/GetParkingInfo/1/176";
-        log.debug("API 호출: {}", apiUrl);
-        
+        log.info("API 호출: {}", apiUrl);
+
         try {
             // HTTP 헤더 설정
             HttpHeaders headers = new HttpHeaders();
