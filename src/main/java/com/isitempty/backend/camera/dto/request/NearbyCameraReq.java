@@ -1,9 +1,9 @@
-package com.isitempty.backend.parkinglot.dto.request;
+package com.isitempty.backend.camera.dto.request;
 
 import lombok.Getter;
 
 @Getter
-public class NearbyParkingLotReq {
+public class NearbyCameraReq {
     private double latitude;
     private double longitude;
 }

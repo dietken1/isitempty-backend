@@ -5,15 +5,19 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile({"dev"})  // local 프로필에서는 비활성화
+@Profile({"dev"})  // 개발환경에서는 비활성화
 @ConditionalOnProperty(name = "ssh.enabled", havingValue = "true", matchIfMissing = false)  // 명시적으로 활성화 필요
 public class SshTunnelConfig {
+    
+    private static final Logger log = LoggerFactory.getLogger(SshTunnelConfig.class);
 
     @Value("${ssh.host:223.130.134.121}")
     private String sshHost;
@@ -41,10 +45,10 @@ public class SshTunnelConfig {
     @PostConstruct
     public void init() {
         try {
-            System.out.println("SSH 터널링 설정 시작...");
-            System.out.println("SSH 호스트: " + sshHost);
-            System.out.println("SSH 사용자: " + sshUsername);
-            System.out.println("SSH 비밀번호 설정됨: " + (sshPassword != null && !sshPassword.isEmpty()));
+            log.info("SSH 터널링 설정 시작...");
+            log.info("SSH 호스트: {}", sshHost);
+            log.info("SSH 사용자: {}", sshUsername);
+            log.info("SSH 비밀번호 설정됨: {}", (sshPassword != null && !sshPassword.isEmpty()));
             
             JSch jsch = new JSch();
             session = jsch.getSession(sshUsername, sshHost, sshPort);
@@ -52,24 +56,23 @@ public class SshTunnelConfig {
             if (sshPassword != null && !sshPassword.isEmpty()) {
                 session.setPassword(sshPassword);
             } else {
-                System.out.println("SSH 비밀번호가 설정되지 않았습니다!");
+                log.warn("SSH 비밀번호가 설정되지 않았습니다!");
             }
             
             java.util.Properties config = new java.util.Properties();
             config.put("StrictHostKeyChecking", "no");
             session.setConfig(config);
             
-            System.out.println("SSH 연결 시도 중...");
+            log.info("SSH 연결 시도 중...");
             session.connect();
-            System.out.println("SSH 연결 성공!");
+            log.info("SSH 연결 성공!");
             
-            System.out.println("포트 포워딩 설정 중: " + localPort + " -> " + remoteHost + ":" + remotePort);
+            log.info("포트 포워딩 설정 중: {} -> {}:{}", localPort, remoteHost, remotePort);
             session.setPortForwardingL(localPort, remoteHost, remotePort);
             
-            System.out.println("SSH 터널 설정 완료: localhost:" + localPort + " -> " + remoteHost + ":" + remotePort);
+            log.info("SSH 터널 설정 완료: localhost:{} -> {}:{}", localPort, remoteHost, remotePort);
         } catch (Exception e) {
-            System.err.println("SSH 터널링 설정 중 오류 발생: " + e.getMessage());
-            e.printStackTrace();
+            log.error("SSH 터널링 설정 중 오류 발생: {}", e.getMessage(), e);
         }
     }
 
@@ -77,7 +80,7 @@ public class SshTunnelConfig {
     public void destroy() {
         if (session != null && session.isConnected()) {
             session.disconnect();
-            System.out.println("SSH 터널 연결 종료");
+            log.info("SSH 터널 연결 종료");
         }
     }
 } 

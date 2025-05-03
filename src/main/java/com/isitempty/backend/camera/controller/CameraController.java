@@ -1,11 +1,11 @@
 package com.isitempty.backend.camera.controller;
 
+import com.isitempty.backend.camera.dto.request.NearbyCameraReq;
 import com.isitempty.backend.camera.entity.Camera;
 import com.isitempty.backend.camera.service.CameraService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,5 +19,14 @@ public class CameraController {
     @GetMapping
     public List<Camera> getAllCameras() {
         return cameraService.getAllCameras();
+    }
+
+    @PostMapping("/nearby")
+    public ResponseEntity<List<Camera>> getNearbyCameras(@RequestBody NearbyCameraReq req) {
+        List<Camera> cameras = cameraService.getNearbyCameras(req.getLatitude(), req.getLongitude());
+        if (cameras.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204 No Content
+        }
+        return ResponseEntity.ok(cameras);
     }
 }

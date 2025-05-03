@@ -6,11 +6,15 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SpringBootApplication
 @EnableScheduling
 @ComponentScan(basePackages = {"com.isitempty", "com.isitempty.config", "com.isitempty.backend"})
 public class IsitemptyApplication {
+    
+    private static final Logger log = LoggerFactory.getLogger(IsitemptyApplication.class);
 
     public static void main(String[] args) {
         // Spring 애플리케이션 실행
@@ -18,11 +22,11 @@ public class IsitemptyApplication {
         
         // 환경 변수 확인용 로그
         Environment env = context.getEnvironment();
-        System.out.println("=== 환경 변수 테스트 ===");
-        System.out.println("SSH_HOST: " + env.getProperty("ssh.host"));
-        System.out.println("SSH_USERNAME: " + env.getProperty("ssh.username"));
-        System.out.println("SSH_PASSWORD: " + (env.getProperty("ssh.password") != null ? "설정됨" : "설정되지 않음"));
-        System.out.println("REDIS_PASSWORD: " + (env.getProperty("spring.data.redis.password") != null ? "설정됨" : "설정되지 않음"));
-        System.out.println("========================");
+        log.info("=== 환경 변수 테스트 ===");
+        log.info("SSH_HOST: {}", env.getProperty("ssh.host"));
+        log.info("SSH_USERNAME: {}", env.getProperty("ssh.username"));
+        log.info("SSH_PASSWORD: {}", (env.getProperty("ssh.password") != null ? "설정됨" : "설정되지 않음"));
+        log.info("REDIS_PASSWORD: {}", (env.getProperty("spring.data.redis.password") != null ? "설정됨" : "설정되지 않음"));
+        log.info("========================");
     }
 }
