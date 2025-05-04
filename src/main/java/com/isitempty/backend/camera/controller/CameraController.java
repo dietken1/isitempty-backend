@@ -4,6 +4,7 @@ import com.isitempty.backend.camera.dto.request.NearbyCameraReq;
 import com.isitempty.backend.camera.entity.Camera;
 import com.isitempty.backend.camera.service.CameraService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +26,7 @@ public class CameraController {
     public ResponseEntity<List<Camera>> getNearbyCameras(@RequestBody NearbyCameraReq req) {
         List<Camera> cameras = cameraService.getNearbyCameras(req.getLatitude(), req.getLongitude());
         if (cameras.isEmpty()) {
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return ResponseEntity.ok(cameras);
     }
