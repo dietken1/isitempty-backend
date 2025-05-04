@@ -6,6 +6,7 @@ import com.isitempty.backend.parkinglot.repository.ParkingLotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,9 @@ public class ParkingLotService {
 
     private final ParkingLotRepository parkingLotRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private ParkingLotMappingService mappingService;
+    
+    // @Lazy 어노테이션을 사용하여 순환 참조 문제 해결
+    private final ParkingLotMappingService mappingService;
     
     private static final String REALTIME_CACHE_KEY = "parking:realtime:";
     private static final String ADDRESS_CACHE_KEY = "parking:address:";
@@ -30,13 +33,10 @@ public class ParkingLotService {
 
     @Autowired
     public ParkingLotService(ParkingLotRepository parkingLotRepository,
-                           RedisTemplate<String, Object> redisTemplate) {
+                           RedisTemplate<String, Object> redisTemplate,
+                           @Lazy ParkingLotMappingService mappingService) {
         this.parkingLotRepository = parkingLotRepository;
         this.redisTemplate = redisTemplate;
-    }
-    
-    @Autowired
-    public void setMappingService(ParkingLotMappingService mappingService) {
         this.mappingService = mappingService;
     }
 

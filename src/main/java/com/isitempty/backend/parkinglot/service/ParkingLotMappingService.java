@@ -7,6 +7,7 @@ import com.isitempty.backend.parkinglot.repository.ParkingLotMappingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,19 +26,16 @@ public class ParkingLotMappingService {
 
     private final ParkingLotMappingRepository mappingRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private ParkingLotService parkingLotService;
+    private final ParkingLotService parkingLotService;
     
     private static final String MAPPING_CACHE_KEY = "parking:id_mapping:";
 
     @Autowired
     public ParkingLotMappingService(ParkingLotMappingRepository mappingRepository, 
-                                   RedisTemplate<String, Object> redisTemplate) {
+                                   RedisTemplate<String, Object> redisTemplate,
+                                   @Lazy ParkingLotService parkingLotService) {
         this.mappingRepository = mappingRepository;
         this.redisTemplate = redisTemplate;
-    }
-    
-    @Autowired
-    public void setParkingLotService(ParkingLotService parkingLotService) {
         this.parkingLotService = parkingLotService;
     }
 
