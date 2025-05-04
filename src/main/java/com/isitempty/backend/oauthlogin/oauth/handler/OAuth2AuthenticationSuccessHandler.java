@@ -1,5 +1,38 @@
 package com.isitempty.backend.oauthlogin.oauth.handler;
 
+import com.isitempty.backend.oauthlogin.api.entity.user.UserRefreshToken;
+import com.isitempty.backend.oauthlogin.api.repository.user.UserRefreshTokenRepository;
+import com.isitempty.backend.oauthlogin.config.properties.AppProperties;
+import com.isitempty.backend.oauthlogin.oauth.entity.ProviderType;
+import com.isitempty.backend.oauthlogin.oauth.entity.RoleType;
+import com.isitempty.backend.oauthlogin.oauth.info.OAuth2UserInfo;
+import com.isitempty.backend.oauthlogin.oauth.info.OAuth2UserInfoFactory;
+import com.isitempty.backend.oauthlogin.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.isitempty.backend.oauthlogin.oauth.token.AuthToken;
+import com.isitempty.backend.oauthlogin.oauth.token.AuthTokenProvider;
+import com.isitempty.backend.oauthlogin.utils.CookieUtil;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Optional;
+
+import static com.isitempty.backend.oauthlogin.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
+import static com.isitempty.backend.oauthlogin.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository.REFRESH_TOKEN;
+
 @Component
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {

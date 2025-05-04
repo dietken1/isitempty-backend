@@ -1,7 +1,10 @@
 package com.isitempty.backend.oauthlogin.api.controller.user;
 
+import com.isitempty.backend.oauthlogin.api.entity.user.User;
 import com.isitempty.backend.oauthlogin.api.service.UserService;
+import com.isitempty.backend.oauthlogin.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

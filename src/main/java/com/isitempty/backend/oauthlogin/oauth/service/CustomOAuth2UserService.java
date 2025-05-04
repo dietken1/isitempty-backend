@@ -1,7 +1,25 @@
 package com.isitempty.backend.oauthlogin.oauth.service;
 
-public class CustomOAuth2UserService {
-}@Service
+import com.isitempty.backend.oauthlogin.api.entity.user.User;
+import com.isitempty.backend.oauthlogin.api.repository.user.UserRepository;
+import com.isitempty.backend.oauthlogin.oauth.entity.ProviderType;
+import com.isitempty.backend.oauthlogin.oauth.entity.RoleType;
+import com.isitempty.backend.oauthlogin.oauth.entity.UserPrincipal;
+import com.isitempty.backend.oauthlogin.oauth.exception.OAuthProviderMissMatchException;
+import com.isitempty.backend.oauthlogin.oauth.info.OAuth2UserInfo;
+import com.isitempty.backend.oauthlogin.oauth.info.OAuth2UserInfoFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+
+import javax.security.sasl.AuthenticationException;
+import java.time.LocalDateTime;
+
+@Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 

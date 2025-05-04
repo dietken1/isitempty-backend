@@ -1,7 +1,20 @@
 package com.isitempty.backend.oauthlogin.oauth.handler;
 
+import com.isitempty.backend.oauthlogin.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.isitempty.backend.oauthlogin.utils.CookieUtil;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+
+import static com.isitempty.backend.oauthlogin.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
 
 @Component
 @RequiredArgsConstructor

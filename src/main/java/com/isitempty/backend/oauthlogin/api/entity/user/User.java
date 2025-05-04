@@ -1,6 +1,8 @@
 package com.isitempty.backend.oauthlogin.api.entity.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.isitempty.backend.oauthlogin.oauth.entity.ProviderType;
+import com.isitempty.backend.oauthlogin.oauth.entity.RoleType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,6 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter

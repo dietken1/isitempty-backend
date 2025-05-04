@@ -1,5 +1,7 @@
 package com.isitempty.backend.oauthlogin.api.service;
 
+import com.isitempty.backend.oauthlogin.api.entity.user.User;
+import com.isitempty.backend.oauthlogin.api.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
