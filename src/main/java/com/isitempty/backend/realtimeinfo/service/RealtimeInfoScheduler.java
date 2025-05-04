@@ -41,8 +41,8 @@ public class RealtimeInfoScheduler {
         log.info("SEOUL_KEY 설정 상태: {}", SEOUL_KEY != null ? "설정됨" : "설정되지 않음");
     }
 
-    // 1분마다 실행
-    @Scheduled(fixedRate = 60_000)
+    // 2분마다 실행
+    @Scheduled(fixedRate = 120_000)
     public void fetchAndStoreParkingData() {
         log.info("주차장 정보 업데이트 스케줄러 실행 시작");
         
