@@ -101,4 +101,16 @@ public class ParkingLot {
 
     @Column(name = "provider_name")
     private String providerName;
+
+    private int reviewCount = 0;
+
+    public int getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(int reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+
 }
