@@ -12,8 +12,15 @@ import java.util.List;
 public class CameraService {
 
     private final CameraRepository cameraRepository;
-
+    
+    // 모든 카메라
     public List<Camera> getAllCameras() {
         return cameraRepository.findAll();
+    }
+
+    // 반경 2km 카메라
+    public List<Camera> getNearbyCameras(double latitude, double longitude) {
+        float radius = 2.0f;
+        return cameraRepository.findNearbyCameras(latitude, longitude, radius);
     }
 }

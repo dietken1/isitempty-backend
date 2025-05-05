@@ -1,12 +1,10 @@
 package com.isitempty.backend.realtimeinfo.service;
 
-// 테스트 주석
 import com.isitempty.backend.realtimeinfo.dto.response.RealtimeRes;
 import com.isitempty.backend.realtimeinfo.dto.response.ParkingInfoRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
@@ -24,7 +22,6 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.data.redis.enabled", havingValue = "true", matchIfMissing = true)
-// @ConditionalOnBean(RedisTemplate.class) 주석처리
 public class RealtimeInfoScheduler {
 
     @Value("${seoul.key:${SEOUL_KEY:}}")
@@ -33,21 +30,26 @@ public class RealtimeInfoScheduler {
     private final RestTemplate restTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     
+    // 인덱싱을 위한 키 prefix 정의
+    private static final String PARKING_ID_PREFIX = "parking:";
+    private static final String ADDRESS_PREFIX = "parking:address:";
+    private static final String PHONE_PREFIX = "parking:phone:";
+    
     @PostConstruct
     public void init() {
         log.info("RealtimeInfoScheduler가 초기화되었습니다. Redis 활성화됨.");
         log.info("SEOUL_KEY 설정 상태: {}", SEOUL_KEY != null ? "설정됨" : "설정되지 않음");
     }
 
-    // 1분마다 실행
-    @Scheduled(fixedRate = 60_000)
+    // 2분마다 실행
+    @Scheduled(fixedRate = 120_000)
     public void fetchAndStoreParkingData() {
         log.info("주차장 정보 업데이트 스케줄러 실행 시작");
         
         // JSON 형식으로 응답을 요청
         String apiUrl = "http://openapi.seoul.go.kr:8088/" + SEOUL_KEY + "/json/GetParkingInfo/1/176";
-        log.debug("API 호출: {}", apiUrl);
-        
+        log.info("API 호출: {}", apiUrl);
+
         try {
             // HTTP 헤더 설정
             HttpHeaders headers = new HttpHeaders();
@@ -73,7 +75,7 @@ public class RealtimeInfoScheduler {
                 int unchangedCount = 0;
                 
                 for (RealtimeRes item : data) {
-                    String key = "parking:" + item.getId();
+                    String key = PARKING_ID_PREFIX + item.getId();
                     currentParkingIds.add(key);
                     
                     // 기존 데이터 조회
@@ -83,6 +85,23 @@ public class RealtimeInfoScheduler {
                     if (existingData == null || !Objects.equals(existingData, item)) {
                         // TTL 3시간으로 설정 (데이터 업데이트가 실패해도 일정 시간 데이터 유지)
                         redisTemplate.opsForValue().set(key, item, Duration.ofHours(3));
+                        
+                        // 주소 인덱스 생성 (주소가 있는 경우)
+                        if (item.getAddress() != null && !item.getAddress().isEmpty()) {
+                            String normalizedAddress = normalizeAddress(item.getAddress());
+                            String addressKey = ADDRESS_PREFIX + normalizedAddress;
+                            redisTemplate.opsForValue().set(addressKey, item, Duration.ofHours(3));
+                            log.debug("주소 인덱스 생성: {} -> {}", addressKey, item.getId());
+                        }
+                        
+                        // 전화번호 인덱스 생성 (전화번호가 있는 경우)
+                        if (item.getPhoneNumber() != null && !item.getPhoneNumber().isEmpty()) {
+                            String normalizedPhone = normalizePhoneNumber(item.getPhoneNumber());
+                            String phoneKey = PHONE_PREFIX + normalizedPhone;
+                            redisTemplate.opsForValue().set(phoneKey, item, Duration.ofHours(3));
+                            log.debug("전화번호 인덱스 생성: {} -> {}", phoneKey, item.getId());
+                        }
+                        
                         updatedCount++;
                         log.debug("Redis 저장 대상 데이터 업데이트: {}", item);
                     } else {
@@ -105,6 +124,16 @@ public class RealtimeInfoScheduler {
         }
     }
     
+    // 주소 정규화 (ParkingLotUtils 클래스 사용)
+    private String normalizeAddress(String address) {
+        return com.isitempty.backend.utils.ParkingLotUtils.normalizeAddress(address);
+    }
+
+    // 전화번호 정규화 (ParkingLotUtils 클래스 사용)
+    private String normalizePhoneNumber(String phone) {
+        return com.isitempty.backend.utils.ParkingLotUtils.normalizePhoneNumber(phone);
+    }
+    
     // 1주일에 한 번 실행 (더 이상 API에서 제공되지 않는 데이터 정리)
     private boolean cleanupScheduled = false;
     
@@ -123,7 +152,7 @@ public class RealtimeInfoScheduler {
                     int removedCount = 0;
                     // 현재 API에 없는 키 삭제
                     for (String key : allKeys) {
-                        if (!currentKeys.contains(key)) {
+                        if (!currentKeys.contains(key) && key.startsWith(PARKING_ID_PREFIX) && key.split(":").length == 2) {
                             redisTemplate.delete(key);
                             removedCount++;
                             log.info("삭제된 오래된 주차장 데이터: {}", key);

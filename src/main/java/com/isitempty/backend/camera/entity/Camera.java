@@ -18,8 +18,8 @@ public class Camera {
     public String address;
 
     @Column(name = "lat")
-    public float latitude;
+    public double latitude;
 
     @Column(name = "lng")
-    public float longitude;
+    public double longitude;
 }
