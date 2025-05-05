@@ -1,6 +1,7 @@
 package com.isitempty.backend.oauthlogin.oauth.token;
 
-import com.isitempty.backend.oauthlogin.api.entity.user.User;
+//import com.isitempty.backend.oauthlogin.api.entity.user.User;
+import org.springframework.security.core.userdetails.User;
 import com.isitempty.backend.oauthlogin.oauth.exception.TokenValidFailedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.security.Keys;
