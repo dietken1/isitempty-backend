@@ -206,6 +206,20 @@ public class ParkingLotService {
                         return null;
                     }
                     
+                    // 거리 정보 계산
+                    Double distance = null;
+                    if (data.length > 5 && data[5] != null) {
+                        if (data[5] instanceof Number) {
+                            distance = ((Number)data[5]).doubleValue();
+                        } else {
+                            try {
+                                distance = Double.parseDouble(data[5].toString());
+                            } catch (NumberFormatException e) {
+                                log.warn("거리 정보 파싱 오류: {}", e.getMessage());
+                            }
+                        }
+                    }
+                    
                     // 캐싱된 상세 정보에서 가져오기
                     ParkingLot fullLotInfo = parkingLotDetails.get(staticId);
                     int slotCount = 0;
@@ -259,21 +273,41 @@ public class ParkingLotService {
                         }
                     }
                     
-                    // 4. 최적화: 매핑 정보 없거나 여석 정보 없으면 null로 처리 (추가 조회 하지 않음)
-                    // findAvailableSpots 호출 제거하여 속도 개선
+                    // 최종 결과 생성 - Builder 패턴 사용
+                    ParkingLotRes.ParkingLotResBuilder builder = ParkingLotRes.builder()
+                        .id(staticId)
+                        .name(name)
+                        .address(address)
+                        .latitude(lat)
+                        .longitude(lng)
+                        .slotCount(slotCount)
+                        .availableSpots(availableSpots)
+                        .distance(distance);
                     
-                    return ParkingLotRes.of(
-                            staticId,
-                            name,
-                            address,
-                            lat, 
-                            lng,
-                            slotCount,
-                            availableSpots
-                    );
+                    // 상세 정보 추가 (null 체크)
+                    if (fullLotInfo != null) {
+                        builder.phone(fullLotInfo.getPhone())
+                              .type(fullLotInfo.getType())
+                              .category(fullLotInfo.getCategory())
+                              .roadAddress(fullLotInfo.getRoadAddress())
+                              .zoneType(fullLotInfo.getZoneType())
+                              .rotationType(fullLotInfo.getRotationType())
+                              .openDays(fullLotInfo.getOpenDays())
+                              .feeInfo(fullLotInfo.getFeeInfo())
+                              .baseFee(fullLotInfo.getBaseFee())
+                              .baseTime(fullLotInfo.getBaseTime())
+                              .addFee(fullLotInfo.getAddFee())
+                              .addTime(fullLotInfo.getAddTime())
+                              .dayTicketFee(fullLotInfo.getDayTicketFee())
+                              .monthTicketFee(fullLotInfo.getMonthTicketFee())
+                              .paymentMethod(fullLotInfo.getPaymentMethod())
+                              .remarks(fullLotInfo.getRemarks())
+                              .adminName(fullLotInfo.getAdminName());
+                    }
                     
+                    return builder.build();
                 } catch (Exception e) {
-                    log.error("주차장 데이터 변환 중 오류: {}", e.getMessage(), e);
+                    log.error("주차장 데이터 변환 중 오류 발생: {}", e.getMessage(), e);
                     return null;
                 }
             })
