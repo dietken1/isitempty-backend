@@ -16,12 +16,13 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReview(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<?> deleteReview(@PathVariable String id, Principal principal) {
+        System.out.println("▶ id type = " + id.getClass());  // 실제 들어오는 타입 확인
         return reviewService.deleteReview(id, principal.getName());
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody ReviewRes dto, Principal principal) {
+    public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody ReviewRes dto, Principal principal) {
         return reviewService.updateReview(id, dto.getContent(), dto.getRating(),principal.getName() );
     }
 }

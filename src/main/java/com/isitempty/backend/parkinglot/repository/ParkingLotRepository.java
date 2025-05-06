@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ParkingLotRepository extends JpaRepository<ParkingLot, String> {
@@ -17,4 +18,7 @@ public interface ParkingLotRepository extends JpaRepository<ParkingLot, String> 
             "WHERE (6371 * acos(cos(radians(?1)) * cos(radians(p.lat)) * cos(radians(p.lng) - radians(?2)) + sin(radians(?1)) * sin(radians(p.lat)))) < ?3 " +
             "ORDER BY distance ASC", nativeQuery = true)
     List<Object[]> findNearbyParkingLots(double latitude, double longitude, double radius);
-} 
+
+
+
+}
