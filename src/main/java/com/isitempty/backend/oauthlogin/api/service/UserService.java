@@ -31,6 +31,8 @@ public class UserService {
         if (userRepository.findByEmail(email) != null) {
             throw new RuntimeException("이미 사용 중인 이메일입니다.");
         }
+        LocalDateTime now = LocalDateTime.now();
+
         User user = new User();
         user.setUserId(userId);
         user.setUsername(name);
@@ -38,7 +40,9 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setProviderType(ProviderType.LOCAL);
         user.setRoleType(RoleType.USER);
+        user.setEmailVerifiedYn("N"); // <-- 추가
         user.setCreatedAt(LocalDateTime.now());
+        user.setModifiedAt(now);      // <-- 추가
         this.userRepository.save(user);
         return user;
     }
