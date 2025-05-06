@@ -55,6 +55,17 @@ jobs:
           echo "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> .env
           echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
           echo "SEOUL_KEY=${{ secrets.SEOUL_KEY }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> .env
+          echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env
+          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env
+          echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "APP_AUTH_TOKEN_SECRET=${{ secrets.APP_AUTH_TOKEN_SECRET }}" >> .env
+          echo "APP_AUTH_TOKEN_EXPIRY=${{ secrets.APP_AUTH_TOKEN_EXPIRY }}" >> .env
+          echo "APP_AUTH_REFRESH_TOKEN_EXPIRY=${{ secrets.APP_AUTH_REFRESH_TOKEN_EXPIRY }}" >> .env
+
           echo "SSH_HOST=" >> .env
           echo "SSH_PORT=" >> .env
           echo "SSH_USERNAME=" >> .env
