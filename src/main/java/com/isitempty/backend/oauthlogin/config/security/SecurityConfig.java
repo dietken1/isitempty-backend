@@ -59,7 +59,16 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                        .requestMatchers("/api/**/admin/**").hasAuthority(RoleType.ADMIN.getCode())
+                        .requestMatchers(
+                                "/api/v1/users/signup",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
+                                "/api/parking-lots/**",
+                                "/api/camera/**",
+                                "/api/toilet/**",
+                                "/oauth2/**"
+                        ).permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/**").hasAuthority(RoleType.USER.getCode())
                         .anyRequest().authenticated()
                 )
