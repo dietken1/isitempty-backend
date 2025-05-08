@@ -67,4 +67,35 @@ public class ParkingLotController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    
+    // 모든 주차장을 거리 정보와 함께 제공 (쿼리 파라미터 방식)
+    @GetMapping("/all-with-distance")
+    public ResponseEntity<List<ParkingLotRes>> getAllParkingLotsWithDistance(
+            @RequestParam(required = false, defaultValue = "37.5665") double latitude,
+            @RequestParam(required = false, defaultValue = "126.9780") double longitude) {
+        try {
+            log.info("GET 요청 - 모든 주차장 거리 정보 요청: 위도={}, 경도={}", latitude, longitude);
+            List<ParkingLotRes> result = parkingLotService.getAllParkingLotsWithDistance(latitude, longitude);
+            log.info("모든 주차장 거리 정보 결과: {}건", result.size());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("모든 주차장 거리 정보 API 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    // 모든 주차장을 거리 정보와 함께 제공 (JSON 요청 본문 방식)
+    @PostMapping("/all-with-distance")
+    public ResponseEntity<List<ParkingLotRes>> getAllParkingLotsWithDistance(
+            @RequestBody NearbyParkingLotReq req) {
+        try {
+            log.info("POST 요청 - 모든 주차장 거리 정보 요청: 위도={}, 경도={}", req.getLatitude(), req.getLongitude());
+            List<ParkingLotRes> result = parkingLotService.getAllParkingLotsWithDistance(req.getLatitude(), req.getLongitude());
+            log.info("모든 주차장 거리 정보 결과: {}건", result.size());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("모든 주차장 거리 정보 API 오류: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 } 
