@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, String> {
     List<Review> findByParkingLot_Id(String parkingLotId);
 
-    boolean existsByUserUsernameAndParkingLotId(String username, String parkingLotId);
+    //boolean existsByUserUsernameAndParkingLotId(String username, String parkingLotId);
 
     Optional<Review> findById(String id);
 

@@ -14,7 +14,7 @@ import java.security.Principal;
 public class ReviewController {
 
     private final ReviewService reviewService;
-    // 리뷰 추가
+    // 리뷰 등록
     @PostMapping
     public ResponseEntity<?> createReview(@RequestBody ReviewRes reviewRes, Principal principal) {
         // principal.getName()은 로그인된 사용자의 username을 반환

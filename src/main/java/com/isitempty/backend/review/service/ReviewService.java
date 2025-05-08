@@ -26,11 +26,11 @@ public class ReviewService {
     private final UserRepository userRepo;
 
     public ResponseEntity<?> createReview(String username, String parkingLotId, String content, int rating) {
-        boolean exists = reviewRepo.existsByUserUsernameAndParkingLotId(username, parkingLotId);
-        if (exists) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "이미 이 주차장에 리뷰를 작성하셨습니다."));
-        }
+        //boolean exists = reviewRepo.existsByUserUsernameAndParkingLotId(username, parkingLotId);
+        //if (exists) {
+            //return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    //.body(Map.of("message", "이미 이 주차장에 리뷰를 작성하셨습니다."));
+        //}
 
         // 리뷰 등록
         User user = userRepo.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -53,6 +53,7 @@ public class ReviewService {
         List<Review> reviews = reviewRepo.findByParkingLot_Id(parkingLotId);
         if (reviews.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "리뷰가 없습니다."));
+
         }
         return ResponseEntity.ok(reviews);
     }

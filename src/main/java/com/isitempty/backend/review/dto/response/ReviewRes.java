@@ -8,11 +8,9 @@ import lombok.Setter;
 public class ReviewRes {
     private String content;
     private int rating;
+
     private String parkingLotId;
 
-    public String getParkingLotId() {
-        return parkingLotId;
-    }
     //private Long userSeq;
     //private String username;
 
