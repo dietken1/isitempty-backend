@@ -22,9 +22,9 @@ public class ReviewController {
     }
 
     // 주차장 별 리뷰 조회
-    @GetMapping("/parkingLot/{id}")
-    public ResponseEntity<?> getReviewsByParkingLot(@PathVariable String id) {
-        return reviewService.getReviewsByParkingLot(id);
+    @GetMapping("/parkingLot/{parkingLotId}")
+    public ResponseEntity<?> getReviewsByParkingLot(@PathVariable String parkingLotId) {
+        return reviewService.getReviewsByParkingLot(parkingLotId);
     }
 
     // 유저 별 리뷰 조회
@@ -40,7 +40,7 @@ public class ReviewController {
 
     // 리뷰 업데이트
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody ReviewRes dto, Principal principal) {
-        return reviewService.updateReview(id, dto.getContent(), dto.getRating(),principal.getName() );
+    public ResponseEntity<?> updateReview(@PathVariable String parkingLotId, @RequestBody ReviewRes dto, Principal principal) {
+        return reviewService.updateReview(parkingLotId, dto.getContent(), dto.getRating(),principal.getName() );
     }
 }
