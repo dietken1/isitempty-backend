@@ -38,9 +38,9 @@ public class ReviewController {
         return reviewService.deleteReview(id, principal.getName());
     }
 
-    // 리뷰 업데이트
+    // 리뷰 수정
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable String parkingLotId, @RequestBody ReviewRes dto, Principal principal) {
-        return reviewService.updateReview(parkingLotId, dto.getContent(), dto.getRating(),principal.getName() );
+    public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody ReviewRes dto, Principal principal) {
+        return reviewService.updateReview(id, dto.getContent(), dto.getRating(),principal.getName() );
     }
 }

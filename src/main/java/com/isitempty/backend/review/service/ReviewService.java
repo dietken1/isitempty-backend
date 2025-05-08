@@ -34,7 +34,7 @@ public class ReviewService {
 
         // 리뷰 등록
         User user = userRepo.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        ParkingLot lot = (ParkingLot) parkingRepo.findById(parkingLotId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        ParkingLot lot = parkingRepo.findById(parkingLotId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         Review review = new Review();
         review.setUser(user);
@@ -84,9 +84,9 @@ public class ReviewService {
 
         return ResponseEntity.ok(Map.of("message", "리뷰가 삭제되었습니다."));
     }
-    // 리뷰 업데이트
-    public ResponseEntity<?> updateReview(String parkingLotId, String content, int rating, String username )
-    {      Review review = (Review) reviewRepo.findById(parkingLotId)
+    // 리뷰 수정
+    public ResponseEntity<?> updateReview(String id, String content, int rating, String username )
+    {      Review review = reviewRepo.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."));
         if (!review.getUser().getUsername().equals(username)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
