@@ -2,9 +2,11 @@ package com.isitempty;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,23 @@ import org.slf4j.LoggerFactory;
 @SpringBootApplication
 @EnableScheduling
 @ComponentScan(basePackages = {"com.isitempty", "com.isitempty.config", "com.isitempty.backend"})
+
+@EnableJpaRepositories(basePackages = {
+        "com.isitempty.backend.review.repository",
+        "com.isitempty.backend.parkinglot.repository",
+        "com.isitempty.backend.oauthlogin.api.repository.user",
+        "com.isitempty.backend.camera.repository",
+        "com.isitempty.backend.toilet.repository",
+        "com.isitempty.backend.question.repository"
+})
+@EntityScan(basePackages = {
+        "com.isitempty.backend.review.entity",
+        "com.isitempty.backend.parkinglot.entity",
+        "com.isitempty.backend.oauthlogin.api.entity.user",
+        "com.isitempty.backend.camera.entity",
+        "com.isitempty.backend.toilet.entity",
+        "com.isitempty.backend.question.entity"
+})
 public class IsitemptyApplication {
     
     private static final Logger log = LoggerFactory.getLogger(IsitemptyApplication.class);
