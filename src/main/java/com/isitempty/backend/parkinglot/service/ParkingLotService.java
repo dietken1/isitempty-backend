@@ -3,6 +3,7 @@ package com.isitempty.backend.parkinglot.service;
 import com.isitempty.backend.parkinglot.dto.response.ParkingLotRes;
 import com.isitempty.backend.parkinglot.entity.ParkingLot;
 import com.isitempty.backend.parkinglot.repository.ParkingLotRepository;
+import com.isitempty.backend.utils.GeoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -524,5 +525,175 @@ public class ParkingLotService {
         // Redis 키 값이 ID 정보를 포함하고 있다면 추출
         // 실제 구현은 Redis 데이터 구조에 따라 달라짐
         return null;
+    }
+
+    // 모든 주차장 정보를 거리 정보와 함께 조회
+    public List<ParkingLotRes> getAllParkingLotsWithDistance(double latitude, double longitude) {
+        log.info("[성능측정] 모든 주차장 거리 정보 조회 시작: 위도={}, 경도={}", latitude, longitude);
+        long startTime = System.currentTimeMillis();
+        
+        // 모든 주차장 정보 조회
+        List<ParkingLot> allParkingLots = parkingLotRepository.findAll();
+        log.info("[성능측정] 모든 주차장 조회 완료: {} 건, 소요시간: {}ms", 
+                allParkingLots.size(), System.currentTimeMillis() - startTime);
+        
+        // ID 목록 추출
+        List<String> staticIds = allParkingLots.stream()
+                .map(ParkingLot::getId)
+                .collect(Collectors.toList());
+                
+        // 매핑 정보 일괄 조회
+        startTime = System.currentTimeMillis();
+        final Map<String, String> mappingsById = new HashMap<>();
+        if (mappingService != null) {
+            mappingsById.putAll(mappingService.getRealtimeIdsByStaticIds(staticIds));
+            log.info("[성능측정] 매핑 정보 일괄 조회 결과: {} 건, 소요시간: {}ms", 
+                    mappingsById.size(), System.currentTimeMillis() - startTime);
+        } else {
+            log.warn("MappingService is not yet initialized, skipping ID mapping lookup");
+        }
+        
+        // Redis에서 여석 정보 일괄 조회를 위한 키 목록 준비
+        startTime = System.currentTimeMillis();
+        List<String> redisKeys = new ArrayList<>();
+        
+        // 1. 매핑 ID 기반 키 추가
+        for (String realtimeId : mappingsById.values()) {
+            if (realtimeId != null && !realtimeId.isEmpty()) {
+                redisKeys.add(REALTIME_CACHE_KEY + realtimeId);
+            }
+        }
+        
+        // 2. 주소/전화번호 기반 키 추가 - 일괄 처리 최적화
+        Map<String, String> normalizedAddresses = new HashMap<>();
+        Map<String, String> normalizedPhones = new HashMap<>();
+        
+        for (ParkingLot lot : allParkingLots) {
+            // 주소 정규화 및 캐싱
+            if (lot.getLotAddress() != null && !lot.getLotAddress().isEmpty()) {
+                String normalized = normalizeAddress(lot.getLotAddress());
+                if (!normalized.isEmpty()) {
+                    normalizedAddresses.put(lot.getId(), normalized);
+                    redisKeys.add(ADDRESS_CACHE_KEY + normalized);
+                }
+            }
+            
+            // 전화번호 정규화 및 캐싱
+            if (lot.getPhone() != null && !lot.getPhone().isEmpty()) {
+                String normalized = normalizePhoneNumber(lot.getPhone());
+                if (!normalized.isEmpty()) {
+                    normalizedPhones.put(lot.getId(), normalized);
+                    redisKeys.add(PHONE_CACHE_KEY + normalized);
+                }
+            }
+        }
+        
+        // Redis에서 여석 정보 일괄 조회
+        Map<String, Integer> availableSpotsByKey = new HashMap<>();
+        if (!redisKeys.isEmpty()) {
+            List<Object> redisValues = redisTemplate.opsForValue().multiGet(redisKeys);
+            if (redisValues != null) {
+                for (int i = 0; i < redisKeys.size(); i++) {
+                    if (redisValues.get(i) != null) {
+                        try {
+                            // 값 파싱 시도
+                            Object value = redisValues.get(i);
+                            Integer spots = parseRedisValue(value);
+                            if (spots != null) {
+                                availableSpotsByKey.put(redisKeys.get(i), spots);
+                            }
+                        } catch (Exception e) {
+                            log.warn("Redis 값 파싱 중 오류: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+        log.info("[성능측정] Redis 여석 정보 일괄 조회: {}개 키 중 {}개 조회됨, 소요시간: {}ms", 
+                redisKeys.size(), availableSpotsByKey.size(), System.currentTimeMillis() - startTime);
+        
+        // 결과 생성
+        startTime = System.currentTimeMillis();
+        List<ParkingLotRes> result = allParkingLots.parallelStream()
+                .map(parkingLot -> mapToParkingLotResWithDistance(parkingLot, latitude, longitude, 
+                        mappingsById, normalizedAddresses, normalizedPhones, availableSpotsByKey))
+                .filter(res -> res != null)
+                .collect(Collectors.toList());
+        
+        log.info("[성능측정] 결과 변환 완료: {} 건, 소요시간: {}ms", 
+                result.size(), System.currentTimeMillis() - startTime);
+        
+        return result;
+    }
+    
+    // ParkingLot 엔티티를 ParkingLotRes로 변환 (거리 정보 포함)
+    private ParkingLotRes mapToParkingLotResWithDistance(
+            ParkingLot parkingLot, double userLatitude, double userLongitude,
+            Map<String, String> mappingsById, Map<String, String> normalizedAddresses,
+            Map<String, String> normalizedPhones, Map<String, Integer> availableSpotsByKey) {
+        
+        if (parkingLot == null || parkingLot.getLat() == null || parkingLot.getLng() == null) {
+            return null;
+        }
+        
+        // 거리 계산
+        double distance = GeoUtils.calculateDistance(
+                userLatitude, userLongitude, 
+                parkingLot.getLat(), parkingLot.getLng());
+        
+        // 여석 정보 조회
+        Integer availableSpots = null;
+        String staticId = parkingLot.getId();
+        
+        // 1. 매핑된 실시간 ID로 조회
+        String realtimeId = mappingsById.get(staticId);
+        if (realtimeId != null) {
+            String redisKey = REALTIME_CACHE_KEY + realtimeId;
+            availableSpots = availableSpotsByKey.get(redisKey);
+        }
+        
+        // 2. 주소 기반 조회
+        if (availableSpots == null && normalizedAddresses.containsKey(staticId)) {
+            String normalized = normalizedAddresses.get(staticId);
+            String redisKey = ADDRESS_CACHE_KEY + normalized;
+            availableSpots = availableSpotsByKey.get(redisKey);
+        }
+        
+        // 3. 전화번호 기반 조회
+        if (availableSpots == null && normalizedPhones.containsKey(staticId)) {
+            String normalized = normalizedPhones.get(staticId);
+            String redisKey = PHONE_CACHE_KEY + normalized;
+            availableSpots = availableSpotsByKey.get(redisKey);
+        }
+        
+        // 결과 객체 생성 - ParkingLotRes 사용
+        ParkingLotRes.ParkingLotResBuilder builder = ParkingLotRes.builder()
+                .id(parkingLot.getId())
+                .name(parkingLot.getName())
+                .latitude(parkingLot.getLat())
+                .longitude(parkingLot.getLng())
+                .address(parkingLot.getLotAddress())
+                .type(parkingLot.getType())
+                .slotCount(parkingLot.getSlotCount() != null ? parkingLot.getSlotCount() : 0)
+                .availableSpots(availableSpots)
+                .distance(distance)
+                .phone(parkingLot.getPhone())
+                .category(parkingLot.getCategory())
+                .roadAddress(parkingLot.getRoadAddress())
+                .zoneType(parkingLot.getZoneType())
+                .rotationType(parkingLot.getRotationType())
+                .openDays(parkingLot.getOpenDays())
+                .feeInfo(parkingLot.getFeeInfo())
+                .baseFee(parkingLot.getBaseFee())
+                .baseTime(parkingLot.getBaseTime())
+                .addFee(parkingLot.getAddFee())
+                .addTime(parkingLot.getAddTime())
+                .dayTicketFee(parkingLot.getDayTicketFee())
+                .monthTicketFee(parkingLot.getMonthTicketFee())
+                .paymentMethod(parkingLot.getPaymentMethod())
+                .remarks(parkingLot.getRemarks())
+                .adminName(parkingLot.getAdminName());
+
+        return builder.build();
     }
 }
