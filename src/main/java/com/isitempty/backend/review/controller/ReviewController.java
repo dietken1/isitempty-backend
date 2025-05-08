@@ -14,13 +14,31 @@ import java.security.Principal;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    // 리뷰 추가
+    @PostMapping
+    public ResponseEntity<?> createReview(@RequestBody ReviewRes reviewRes, Principal principal) {
+        // principal.getName()은 로그인된 사용자의 username을 반환
+        return reviewService.createReview(principal.getName(), reviewRes.getParkingLotId(), reviewRes.getContent(), reviewRes.getRating());
+    }
 
+    // 주차장 별 리뷰 조회
+    @GetMapping("/parkingLot/{id}")
+    public ResponseEntity<?> getReviewsByParkingLot(@PathVariable String id) {
+        return reviewService.getReviewsByParkingLot(id);
+    }
+
+    // 유저 별 리뷰 조회
+    @GetMapping("/user/{username}")
+    public ResponseEntity<?> getReviewsByUser(@PathVariable String username) {
+        return reviewService.getReviewsByUser(username);
+    }
+    // 리뷰 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteReview(@PathVariable String id, Principal principal) {
-        System.out.println("▶ id type = " + id.getClass());  // 실제 들어오는 타입 확인
         return reviewService.deleteReview(id, principal.getName());
     }
 
+    // 리뷰 업데이트
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody ReviewRes dto, Principal principal) {
         return reviewService.updateReview(id, dto.getContent(), dto.getRating(),principal.getName() );

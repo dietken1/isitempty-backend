@@ -48,6 +48,23 @@ public class ReviewService {
 
         return ResponseEntity.ok(Map.of("message", "리뷰가 등록되었습니다."));
     }
+    // 주차장 별 리뷰 조회
+    public ResponseEntity<?> getReviewsByParkingLot(String parkingLotId) {
+        List<Review> reviews = reviewRepo.findByParkingLot_Id(parkingLotId);
+        if (reviews.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "리뷰가 없습니다."));
+        }
+        return ResponseEntity.ok(reviews);
+    }
+
+    // 유저 별 리뷰 조회
+    public ResponseEntity<?> getReviewsByUser(String username) {
+        List<Review> reviews = reviewRepo.findByUserUsername(username);
+        if (reviews.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "리뷰가 없습니다."));
+        }
+        return ResponseEntity.ok(reviews);
+    }
 
     // 리뷰 삭제
     public ResponseEntity<?> deleteReview(String id, String username)
