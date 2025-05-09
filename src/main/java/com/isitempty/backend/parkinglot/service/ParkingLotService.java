@@ -4,6 +4,7 @@ import com.isitempty.backend.parkinglot.dto.response.ParkingLotRes;
 import com.isitempty.backend.parkinglot.entity.ParkingLot;
 import com.isitempty.backend.parkinglot.repository.ParkingLotRepository;
 import com.isitempty.backend.utils.GeoUtils;
+import com.isitempty.backend.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ public class ParkingLotService {
     
     // @Lazy 어노테이션을 사용하여 순환 참조 문제 해결
     private final ParkingLotMappingService mappingService;
+    private final ReviewService reviewService;
     
     private static final String REALTIME_CACHE_KEY = "parking:realtime:";
     private static final String ADDRESS_CACHE_KEY = "parking:address:";
@@ -35,10 +37,12 @@ public class ParkingLotService {
     @Autowired
     public ParkingLotService(ParkingLotRepository parkingLotRepository,
                            RedisTemplate<String, Object> redisTemplate,
-                           @Lazy ParkingLotMappingService mappingService) {
+                           @Lazy ParkingLotMappingService mappingService,
+                           ReviewService reviewService) {
         this.parkingLotRepository = parkingLotRepository;
         this.redisTemplate = redisTemplate;
         this.mappingService = mappingService;
+        this.reviewService = reviewService;
     }
 
     // 전체 주차장 리스트 조회
@@ -274,6 +278,9 @@ public class ParkingLotService {
                         }
                     }
                     
+                    // 평균 리뷰 점수 조회
+                    Double averageRating = reviewService.getAverageRatingByParkingLotId(staticId);
+                    
                     // 최종 결과 생성 - Builder 패턴 사용
                     ParkingLotRes.ParkingLotResBuilder builder = ParkingLotRes.builder()
                         .id(staticId)
@@ -283,7 +290,8 @@ public class ParkingLotService {
                         .longitude(lng)
                         .slotCount(slotCount)
                         .availableSpots(availableSpots)
-                        .distance(distance);
+                        .distance(distance)
+                        .averageRating(averageRating);
                     
                     // 상세 정보 추가 (null 체크)
                     if (fullLotInfo != null) {
@@ -532,14 +540,14 @@ public class ParkingLotService {
         log.info("[성능측정] 모든 주차장 거리 정보 조회 시작: 위도={}, 경도={}", latitude, longitude);
         long startTime = System.currentTimeMillis();
         
-        // 모든 주차장 정보 조회
-        List<ParkingLot> allParkingLots = parkingLotRepository.findAll();
-        log.info("[성능측정] 모든 주차장 조회 완료: {} 건, 소요시간: {}ms", 
-                allParkingLots.size(), System.currentTimeMillis() - startTime);
+        // 새로운 쿼리를 사용하여 데이터베이스에서 거리 계산을 수행
+        List<Object[]> parkingLotData = findAllParkingLotsWithDistance(latitude, longitude);
+        log.info("[성능측정] 모든 주차장 조회 완료(거리 계산 포함): {} 건, 소요시간: {}ms", 
+                parkingLotData.size(), System.currentTimeMillis() - startTime);
         
         // ID 목록 추출
-        List<String> staticIds = allParkingLots.stream()
-                .map(ParkingLot::getId)
+        List<String> staticIds = parkingLotData.stream()
+                .map(data -> (String) data[0])
                 .collect(Collectors.toList());
                 
         // 매핑 정보 일괄 조회
@@ -557,6 +565,11 @@ public class ParkingLotService {
         startTime = System.currentTimeMillis();
         List<String> redisKeys = new ArrayList<>();
         
+        // 매핑된 주차장 정보를 캐시에 저장
+        Map<String, ParkingLot> parkingLotDetails = parkingLotRepository.findAllById(staticIds)
+                .stream()
+                .collect(Collectors.toMap(ParkingLot::getId, lot -> lot, (old, newVal) -> newVal));
+        
         // 1. 매핑 ID 기반 키 추가
         for (String realtimeId : mappingsById.values()) {
             if (realtimeId != null && !realtimeId.isEmpty()) {
@@ -568,7 +581,7 @@ public class ParkingLotService {
         Map<String, String> normalizedAddresses = new HashMap<>();
         Map<String, String> normalizedPhones = new HashMap<>();
         
-        for (ParkingLot lot : allParkingLots) {
+        for (ParkingLot lot : parkingLotDetails.values()) {
             // 주소 정규화 및 캐싱
             if (lot.getLotAddress() != null && !lot.getLotAddress().isEmpty()) {
                 String normalized = normalizeAddress(lot.getLotAddress());
@@ -614,11 +627,136 @@ public class ParkingLotService {
         
         // 결과 생성
         startTime = System.currentTimeMillis();
-        List<ParkingLotRes> result = allParkingLots.parallelStream()
-                .map(parkingLot -> mapToParkingLotResWithDistance(parkingLot, latitude, longitude, 
-                        mappingsById, normalizedAddresses, normalizedPhones, availableSpotsByKey))
-                .filter(res -> res != null)
-                .collect(Collectors.toList());
+        
+        // 주차장 데이터 처리 병렬화하여 속도 개선 (getNearbyParkingLots와 유사한 처리 방식 적용)
+        List<ParkingLotRes> result = parkingLotData.parallelStream().map(data -> {
+            try {
+                if (data == null || data.length < 5) {
+                    log.warn("유효하지 않은 주차장 데이터: {}", data);
+                    return null;
+                }
+                
+                String staticId = (String) data[0];
+                String name = (String) data[1];
+                
+                // 숫자 타입 안전하게 변환
+                Double lat = null;
+                if (data[2] != null) {
+                    if (data[2] instanceof Number) {
+                        lat = ((Number)data[2]).doubleValue();
+                    } else {
+                        lat = Double.parseDouble(data[2].toString());
+                    }
+                }
+                
+                Double lng = null;
+                if (data[3] != null) {
+                    if (data[3] instanceof Number) {
+                        lng = ((Number)data[3]).doubleValue();
+                    } else {
+                        lng = Double.parseDouble(data[3].toString());
+                    }
+                }
+                
+                String address = (String) data[4];
+                
+                // 필수 데이터 검증
+                if (staticId == null || name == null || lat == null || lng == null) {
+                    log.warn("주차장 필수 데이터 누락: ID={}, 이름={}, 위도={}, 경도={}", 
+                            staticId, name, lat, lng);
+                    return null;
+                }
+                
+                // 거리 정보 계산
+                Double distance = null;
+                if (data.length > 5 && data[5] != null) {
+                    if (data[5] instanceof Number) {
+                        distance = ((Number)data[5]).doubleValue();
+                    } else {
+                        try {
+                            distance = Double.parseDouble(data[5].toString());
+                        } catch (NumberFormatException e) {
+                            log.warn("거리 정보 파싱 오류: {}", e.getMessage());
+                        }
+                    }
+                }
+                
+                // 캐싱된 상세 정보에서 가져오기
+                ParkingLot fullLotInfo = parkingLotDetails.get(staticId);
+                if (fullLotInfo == null) {
+                    log.warn("주차장 상세 정보 누락: ID={}", staticId);
+                    return null;
+                }
+                
+                int slotCount = 0;
+                if (fullLotInfo.getSlotCount() != null) {
+                    slotCount = fullLotInfo.getSlotCount();
+                }
+                
+                // 여석 정보 조회 - 미리 조회한 매핑 정보 활용
+                Integer availableSpots = null;
+                
+                // 1. 매핑된 실시간 ID로 조회
+                String realtimeId = mappingsById.get(staticId);
+                if (realtimeId != null) {
+                    String redisKey = REALTIME_CACHE_KEY + realtimeId;
+                    availableSpots = availableSpotsByKey.get(redisKey);
+                }
+                
+                // 2. 주소 기반 조회
+                if (availableSpots == null && normalizedAddresses.containsKey(staticId)) {
+                    String normalized = normalizedAddresses.get(staticId);
+                    String redisKey = ADDRESS_CACHE_KEY + normalized;
+                    availableSpots = availableSpotsByKey.get(redisKey);
+                }
+                
+                // 3. 전화번호 기반 조회
+                if (availableSpots == null && normalizedPhones.containsKey(staticId)) {
+                    String normalized = normalizedPhones.get(staticId);
+                    String redisKey = PHONE_CACHE_KEY + normalized;
+                    availableSpots = availableSpotsByKey.get(redisKey);
+                }
+                
+                // 평균 리뷰 점수 조회
+                Double averageRating = reviewService.getAverageRatingByParkingLotId(staticId);
+                
+                // 최종 결과 생성 - Builder 패턴 사용
+                ParkingLotRes.ParkingLotResBuilder builder = ParkingLotRes.builder()
+                    .id(staticId)
+                    .name(name)
+                    .latitude(lat)
+                    .longitude(lng)
+                    .address(address)
+                    .type(fullLotInfo.getType())
+                    .slotCount(slotCount)
+                    .availableSpots(availableSpots)
+                    .distance(distance)
+                    .phone(fullLotInfo.getPhone())
+                    .category(fullLotInfo.getCategory())
+                    .roadAddress(fullLotInfo.getRoadAddress())
+                    .zoneType(fullLotInfo.getZoneType())
+                    .rotationType(fullLotInfo.getRotationType())
+                    .openDays(fullLotInfo.getOpenDays())
+                    .feeInfo(fullLotInfo.getFeeInfo())
+                    .baseFee(fullLotInfo.getBaseFee())
+                    .baseTime(fullLotInfo.getBaseTime())
+                    .addFee(fullLotInfo.getAddFee())
+                    .addTime(fullLotInfo.getAddTime())
+                    .dayTicketFee(fullLotInfo.getDayTicketFee())
+                    .monthTicketFee(fullLotInfo.getMonthTicketFee())
+                    .paymentMethod(fullLotInfo.getPaymentMethod())
+                    .remarks(fullLotInfo.getRemarks())
+                    .adminName(fullLotInfo.getAdminName())
+                    .averageRating(averageRating);
+                
+                return builder.build();
+            } catch (Exception e) {
+                log.error("주차장 데이터 변환 중 오류 발생: {}", e.getMessage(), e);
+                return null;
+            }
+        })
+        .filter(res -> res != null)
+        .collect(Collectors.toList());
         
         log.info("[성능측정] 결과 변환 완료: {} 건, 소요시간: {}ms", 
                 result.size(), System.currentTimeMillis() - startTime);
@@ -626,48 +764,103 @@ public class ParkingLotService {
         return result;
     }
     
-    // ParkingLot 엔티티를 ParkingLotRes로 변환 (거리 정보 포함)
-    private ParkingLotRes mapToParkingLotResWithDistance(
-            ParkingLot parkingLot, double userLatitude, double userLongitude,
-            Map<String, String> mappingsById, Map<String, String> normalizedAddresses,
-            Map<String, String> normalizedPhones, Map<String, Integer> availableSpotsByKey) {
+    // 데이터베이스 수준에서 모든 주차장 정보와 거리를 조회하는 메소드
+    private List<Object[]> findAllParkingLotsWithDistance(double latitude, double longitude) {
+        // 데이터베이스에서 직접 쿼리 실행 - 이미 존재하는 Repository를 활용하여 쿼리 실행
+        return parkingLotRepository.findAllParkingLotsOrderedByDistance(latitude, longitude);
+    }
+    
+    /**
+     * 특정 주차장의 상세 정보를 조회하는 메소드
+     * 
+     * @param parkingLotId 조회할 주차장 ID
+     * @param latitude 사용자 위치 위도
+     * @param longitude 사용자 위치 경도
+     * @return 주차장 상세 정보
+     */
+    public ParkingLotRes getParkingLotDetail(String parkingLotId, double latitude, double longitude) {
+        log.info("[성능측정] 특정 주차장 상세 정보 조회 시작: ID={}, 위도={}, 경도={}", parkingLotId, latitude, longitude);
+        long startTime = System.currentTimeMillis();
         
-        if (parkingLot == null || parkingLot.getLat() == null || parkingLot.getLng() == null) {
+        // 주차장 기본 정보 조회
+        ParkingLot parkingLot = parkingLotRepository.findById(parkingLotId)
+                .orElse(null);
+                
+        if (parkingLot == null) {
+            log.warn("주차장 정보를 찾을 수 없습니다: ID={}", parkingLotId);
             return null;
         }
         
-        // 거리 계산
-        double distance = GeoUtils.calculateDistance(
-                userLatitude, userLongitude, 
-                parkingLot.getLat(), parkingLot.getLng());
+        log.info("[성능측정] 특정 주차장 기본 정보 조회 완료: 소요시간={}ms", System.currentTimeMillis() - startTime);
         
-        // 여석 정보 조회
+        // 매핑 정보 조회
+        startTime = System.currentTimeMillis();
+        String realtimeId = null;
+        if (mappingService != null) {
+            Map<String, String> mapping = mappingService.getRealtimeIdsByStaticIds(List.of(parkingLotId));
+            realtimeId = mapping.get(parkingLotId);
+        }
+        
+        // 여석 정보 조회를 위한 키 준비
+        List<String> redisKeys = new ArrayList<>();
+        
+        // 1. 매핑된 실시간 ID 기반 키 추가
+        if (realtimeId != null && !realtimeId.isEmpty()) {
+            redisKeys.add(REALTIME_CACHE_KEY + realtimeId);
+        }
+        
+        // 2. 주소 기반 키
+        String normalizedAddress = null;
+        if (parkingLot.getLotAddress() != null && !parkingLot.getLotAddress().isEmpty()) {
+            normalizedAddress = normalizeAddress(parkingLot.getLotAddress());
+            if (!normalizedAddress.isEmpty()) {
+                redisKeys.add(ADDRESS_CACHE_KEY + normalizedAddress);
+            }
+        }
+        
+        // 3. 전화번호 기반 키
+        String normalizedPhone = null;
+        if (parkingLot.getPhone() != null && !parkingLot.getPhone().isEmpty()) {
+            normalizedPhone = normalizePhoneNumber(parkingLot.getPhone());
+            if (!normalizedPhone.isEmpty()) {
+                redisKeys.add(PHONE_CACHE_KEY + normalizedPhone);
+            }
+        }
+        
+        // Redis에서 여석 정보 조회
         Integer availableSpots = null;
-        String staticId = parkingLot.getId();
-        
-        // 1. 매핑된 실시간 ID로 조회
-        String realtimeId = mappingsById.get(staticId);
-        if (realtimeId != null) {
-            String redisKey = REALTIME_CACHE_KEY + realtimeId;
-            availableSpots = availableSpotsByKey.get(redisKey);
+        if (!redisKeys.isEmpty()) {
+            List<Object> redisValues = redisTemplate.opsForValue().multiGet(redisKeys);
+            if (redisValues != null) {
+                for (int i = 0; i < redisKeys.size(); i++) {
+                    if (redisValues.get(i) != null) {
+                        try {
+                            Integer spots = parseRedisValue(redisValues.get(i));
+                            if (spots != null) {
+                                availableSpots = spots;
+                                break; // 첫 번째 유효한 여석 정보 사용
+                            }
+                        } catch (Exception e) {
+                            log.warn("Redis 값 파싱 중 오류: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
         }
         
-        // 2. 주소 기반 조회
-        if (availableSpots == null && normalizedAddresses.containsKey(staticId)) {
-            String normalized = normalizedAddresses.get(staticId);
-            String redisKey = ADDRESS_CACHE_KEY + normalized;
-            availableSpots = availableSpotsByKey.get(redisKey);
+        // 거리 계산
+        double distance = 0.0;
+        if (parkingLot.getLat() != null && parkingLot.getLng() != null) {
+            distance = GeoUtils.calculateDistance(
+                    latitude, longitude,
+                    parkingLot.getLat(), parkingLot.getLng());
         }
         
-        // 3. 전화번호 기반 조회
-        if (availableSpots == null && normalizedPhones.containsKey(staticId)) {
-            String normalized = normalizedPhones.get(staticId);
-            String redisKey = PHONE_CACHE_KEY + normalized;
-            availableSpots = availableSpotsByKey.get(redisKey);
-        }
+        // 평균 리뷰 점수 조회
+        Double averageRating = reviewService.getAverageRatingByParkingLotId(parkingLotId);
         
-        // 결과 객체 생성 - ParkingLotRes 사용
-        ParkingLotRes.ParkingLotResBuilder builder = ParkingLotRes.builder()
+        // 결과 객체 생성
+        ParkingLotRes result = ParkingLotRes.builder()
                 .id(parkingLot.getId())
                 .name(parkingLot.getName())
                 .latitude(parkingLot.getLat())
@@ -692,8 +885,12 @@ public class ParkingLotService {
                 .monthTicketFee(parkingLot.getMonthTicketFee())
                 .paymentMethod(parkingLot.getPaymentMethod())
                 .remarks(parkingLot.getRemarks())
-                .adminName(parkingLot.getAdminName());
-
-        return builder.build();
+                .adminName(parkingLot.getAdminName())
+                .averageRating(averageRating)
+                .build();
+        
+        log.info("[성능측정] 특정 주차장 상세 정보 조회 완료: 소요시간={}ms", System.currentTimeMillis() - startTime);
+        
+        return result;
     }
 }

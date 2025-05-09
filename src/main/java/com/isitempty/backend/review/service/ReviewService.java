@@ -25,16 +25,26 @@ public class ReviewService {
     private final ParkingLotRepository parkingRepo;
     private final UserRepository userRepo;
 
-    public ResponseEntity<?> createReview(String username, String parkingLotId, String content, int rating) {
+    // 주차장별 평균 리뷰 점수 조회
+    public Double getAverageRatingByParkingLotId(String parkingLotId) {
+        return reviewRepo.getAverageRatingByParkingLotId(parkingLotId);
+    }
+
+    public ResponseEntity<?> createReview(String userIdentifier, String parkingLotId, String content, int rating) {
         //boolean exists = reviewRepo.existsByUserUsernameAndParkingLotId(username, parkingLotId);
         //if (exists) {
             //return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     //.body(Map.of("message", "이미 이 주차장에 리뷰를 작성하셨습니다."));
         //}
 
-        // 리뷰 등록
-        User user = userRepo.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        ParkingLot lot = parkingRepo.findById(parkingLotId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        // 리뷰 등록 - 토큰의 값(userId)으로 사용자 찾기
+        User user = userRepo.findByUserId(userIdentifier);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+        
+        ParkingLot lot = parkingRepo.findById(parkingLotId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "주차장을 찾을 수 없습니다."));
 
         Review review = new Review();
         review.setUser(user);
@@ -48,12 +58,12 @@ public class ReviewService {
 
         return ResponseEntity.ok(Map.of("message", "리뷰가 등록되었습니다."));
     }
+    
     // 주차장 별 리뷰 조회
     public ResponseEntity<?> getReviewsByParkingLot(String parkingLotId) {
         List<Review> reviews = reviewRepo.findByParkingLot_Id(parkingLotId);
         if (reviews.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "리뷰가 없습니다."));
-
         }
         return ResponseEntity.ok(reviews);
     }
@@ -67,15 +77,26 @@ public class ReviewService {
         return ResponseEntity.ok(reviews);
     }
 
+    // 유저 ID별 리뷰 조회
+    public ResponseEntity<?> getReviewsByUserId(String userId) {
+        List<Review> reviews = reviewRepo.findByUserUserId(userId);
+        if (reviews.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "리뷰가 없습니다."));
+        }
+        return ResponseEntity.ok(reviews);
+    }
+
     // 리뷰 삭제
-    public ResponseEntity<?> deleteReview(String id, String username)
-    {
+    public ResponseEntity<?> deleteReview(Long id, String userIdentifier) {
         Review review = reviewRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."));
-        if (!review.getUser().getUsername().equals(username)) {
+        
+        // 토큰의 사용자 ID와 리뷰 작성자의 userId 비교
+        if (!review.getUser().getUserId().equals(userIdentifier)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "리뷰는 본인만 삭제 가능합니다."));
         }
+        
         reviewRepo.deleteById(id);
 
         ParkingLot lot = review.getParkingLot();
@@ -84,14 +105,18 @@ public class ReviewService {
 
         return ResponseEntity.ok(Map.of("message", "리뷰가 삭제되었습니다."));
     }
+    
     // 리뷰 수정
-    public ResponseEntity<?> updateReview(String id, String content, int rating, String username )
-    {      Review review = reviewRepo.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."));
-        if (!review.getUser().getUsername().equals(username)) {
+    public ResponseEntity<?> updateReview(Long id, String content, int rating, String userIdentifier) {
+        Review review = reviewRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."));
+        
+        // 토큰의 사용자 ID와 리뷰 작성자의 userId 비교
+        if (!review.getUser().getUserId().equals(userIdentifier)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "리뷰는 본인만 수정 가능합니다."));
         }
+        
         review.setContent(content);
         review.setRating(rating);
         reviewRepo.save(review);
