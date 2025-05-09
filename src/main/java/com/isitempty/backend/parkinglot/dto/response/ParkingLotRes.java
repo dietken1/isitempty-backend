@@ -33,4 +33,5 @@ public class ParkingLotRes {
     private String remarks;         // 비고
     private String adminName;       // 관리자 이름
     private Double distance;        // 거리(km)
+    private Double averageRating;   // 평균 리뷰 점수
 }
