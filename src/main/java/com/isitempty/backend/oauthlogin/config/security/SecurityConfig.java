@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                         .requestMatchers(
                                 "/api/v1/users/signup",
+                                "/api/v1/users/createadmin",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/parking-lots/**",
