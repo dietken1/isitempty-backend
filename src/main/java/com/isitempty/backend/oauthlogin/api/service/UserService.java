@@ -47,6 +47,29 @@ public class UserService {
         return user;
     }
 
+    public User createAdmin(String userId, String name, String email, String password) {
+        if (userRepository.findByUserId(userId) != null) {
+            throw new RuntimeException("이미 존재하는 사용자 ID입니다.");
+        }
+        if (userRepository.findByEmail(email) != null) {
+            throw new RuntimeException("이미 사용 중인 이메일입니다.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setProviderType(ProviderType.LOCAL);
+        user.setRoleType(RoleType.ADMIN);
+        user.setEmailVerifiedYn("N"); // <-- 추가
+        user.setCreatedAt(LocalDateTime.now());
+        user.setModifiedAt(now);      // <-- 추가
+        this.userRepository.save(user);
+        return user;
+    }
+
     public User updateUser(String userId, String email, String password) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {

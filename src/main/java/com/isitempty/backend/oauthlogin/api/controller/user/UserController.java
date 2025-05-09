@@ -56,6 +56,30 @@ public class UserController {
         }
     }
 
+    @PostMapping("/createadmin")
+    public ResponseEntity<?> SignupAdmin(@Valid @RequestBody UserCreateForm userCreateForm, BindingResult bindingResult) {
+        // 유효성 검사 오류 처리
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
+
+        // 비밀번호 일치 확인
+        if (!userCreateForm.getPassword1().equals(userCreateForm.getPassword2())) {
+            return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
+        }
+
+        try {
+            // 사용자 생성
+            userService.createAdmin(userCreateForm.getUsername(),
+                    userCreateForm.getName(),
+                    userCreateForm.getEmail(),
+                    userCreateForm.getPassword1());
+            return ResponseEntity.ok("회원가입 성공");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("회원가입 실패: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> logout() {
