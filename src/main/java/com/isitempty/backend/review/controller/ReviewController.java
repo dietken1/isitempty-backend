@@ -28,19 +28,20 @@ public class ReviewController {
     }
 
     // 유저 별 리뷰 조회
-    @GetMapping("/user/{username}")
-    public ResponseEntity<?> getReviewsByUser(@PathVariable String username) {
-        return reviewService.getReviewsByUser(username);
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getReviewsByUser(@PathVariable String userId) {
+        return reviewService.getReviewsByUserId(userId);
     }
+
     // 리뷰 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReview(@PathVariable String id, Principal principal) {
+    public ResponseEntity<?> deleteReview(@PathVariable Long id, Principal principal) {
         return reviewService.deleteReview(id, principal.getName());
     }
 
     // 리뷰 수정
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateReview(@PathVariable String id, @RequestBody ReviewRes dto, Principal principal) {
+    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody ReviewRes dto, Principal principal) {
         return reviewService.updateReview(id, dto.getContent(), dto.getRating(),principal.getName() );
     }
 }
