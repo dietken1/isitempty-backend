@@ -16,6 +16,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -23,13 +28,38 @@ public class UserController {
 
     private final UserService userService;
 
+//    @GetMapping
+//    public ApiResponse getUser() {
+//        org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//
+//        User user = userService.getUser(principal.getUsername());
+//
+//        return ApiResponse.success("user", user);
+//    }
+
     @GetMapping
-    public ApiResponse getUser() {
-        org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        User user = userService.getUser(principal.getUsername());
-
-        return ApiResponse.success("user", user);
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")  // 관리자만 모든 사용자 목록을 볼 수 있음
+    public ResponseEntity<?> getUser() {
+        try {
+            // 모든 사용자 목록 조회
+            List<User> users = userService.getAllUsers();
+            
+            // UserResponse 목록으로 변환
+            List<UserResponse> userResponses = users.stream()
+                .map(user -> new UserResponse(
+                    user.getUserId(),
+                    user.getUsername(),
+                    user.getEmail()
+                ))
+                .collect(Collectors.toList());
+            
+            // 응답 구성
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", userResponses);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 조회 실패: " + e.getMessage());
+        }
     }
 
     @PostMapping("/signup")
@@ -132,7 +162,15 @@ public class UserController {
         try {
             String userId = getCurrentUserId();
             User user = userService.getUser(userId);
-            return ResponseEntity.ok(new UserResponse(user.getUserId(), user.getUsername(), user.getEmail()));
+            UserResponse userResponse = new UserResponse(
+                    user.getUserId(),
+                    user.getUsername(),
+                    user.getEmail()
+            );
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("user", userResponse);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 조회 실패: " + e.getMessage());
         }

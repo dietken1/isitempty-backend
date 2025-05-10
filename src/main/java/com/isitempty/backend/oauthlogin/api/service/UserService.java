@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -97,5 +98,13 @@ public class UserService {
             throw new RuntimeException("사용자를 찾을 수 없습니다.");
         }
         userRepository.delete(user);
+    }
+
+    /**
+     * 모든 사용자 목록을 조회합니다.
+     * @return 사용자 목록
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }
