@@ -68,14 +68,14 @@ public class SecurityConfig {
                                 "/api/parking-lots/**",
                                 "/api/camera/**",
                                 "/api/toilet/**",
-                                "/api/reviews/parkingLot/**",
+                                "/api/reviews/**",
                                 "/oauth2/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/question").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/v1/users/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
-                        .requestMatchers("/api/**").hasAuthority(RoleType.USER.getCode())
+                        .requestMatchers("/api/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
