@@ -49,14 +49,13 @@ public class UserController {
                 .map(user -> new UserResponse(
                     user.getUserId(),
                     user.getUsername(),
-                    user.getEmail()
+                    user.getEmail(),
+                    user.getRoleType().getCode().replace("ROLE_", "")  // ROLE_ 접두사 제거
                 ))
                 .collect(Collectors.toList());
             
-            // 응답 구성
-            Map<String, Object> response = new HashMap<>();
-            response.put("users", userResponses);
-            return ResponseEntity.ok(response);
+            // users 배열을 직접 반환
+            return ResponseEntity.ok(userResponses);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 조회 실패: " + e.getMessage());
         }
@@ -165,12 +164,12 @@ public class UserController {
             UserResponse userResponse = new UserResponse(
                     user.getUserId(),
                     user.getUsername(),
-                    user.getEmail()
+                    user.getEmail(),
+                    user.getRoleType().getCode().replace("ROLE_", "")  // ROLE_ 접두사 제거
             );
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", userResponse);
-            return ResponseEntity.ok(response);
+            // user 키 없이 직접 반환
+            return ResponseEntity.ok(userResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("사용자 정보 조회 실패: " + e.getMessage());
         }
