@@ -97,16 +97,9 @@ public class UserController {
             return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
         }
         try {
-            // Principal에서 username 추출
-            String username;
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principal instanceof User) {
-                username = ((User) principal).getUsername();
-            } else {
-                username = principal.toString(); // JWT에서 username이 String인 경우
-            }
-            User user = userService.getUser(username); // UserService에서 사용자 조회
-            userService.updateUser(user.getUsername(), userUpdateForm.getEmail(), userUpdateForm.getPassword());
+            String userId = getCurrentUserId();
+            User user = userService.getUser(userId);
+            userService.updateUser(user.getUserId(), userUpdateForm.getUsername(), userUpdateForm.getEmail(), userUpdateForm.getPassword());
             return ResponseEntity.ok("정보 수정 성공");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("정보 수정 실패: " + e.getMessage());
