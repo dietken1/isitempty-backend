@@ -70,10 +70,13 @@ public class UserService {
         return user;
     }
 
-    public User updateUser(String userId, String email, String password) {
+    public User updateUser(String userId, String username, String email, String password) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {
             throw new RuntimeException("사용자를 찾을 수 없습니다.");
+        }
+        if (username != null && !username.isEmpty()) {
+            user.setUsername(username);
         }
         if (email != null && !email.isEmpty()) {
             if (userRepository.findByEmail(email) != null && !user.getEmail().equals(email)) {
