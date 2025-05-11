@@ -4,6 +4,7 @@ import com.isitempty.backend.favorite.dto.request.FavoriteReq;
 import com.isitempty.backend.favorite.service.FavoriteService;
 import com.isitempty.backend.review.dto.response.ReviewRes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

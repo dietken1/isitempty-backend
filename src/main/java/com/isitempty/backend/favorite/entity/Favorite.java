@@ -23,6 +23,6 @@ public class Favorite {
     @JoinColumn(name = "parking_lot_id")
     private ParkingLot parkingLot; // 주차장
 
-    //private boolean isFavorited = true; // 찜 여부 (true: 찜, false: 찜 해제)
+    private boolean isFavorited = true; // 찜 여부 (true: 찜, false: 찜 해제)
 }
 
