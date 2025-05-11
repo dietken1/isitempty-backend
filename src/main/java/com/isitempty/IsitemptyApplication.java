@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
         "com.isitempty.backend.oauthlogin.api.repository.user",
         "com.isitempty.backend.camera.repository",
         "com.isitempty.backend.toilet.repository",
-        "com.isitempty.backend.question.repository"
+        "com.isitempty.backend.question.repository",
+        "com.isitempty.backend.favorite.repository"
 })
 @EntityScan(basePackages = {
         "com.isitempty.backend.review.entity",
@@ -29,7 +30,9 @@ import org.slf4j.LoggerFactory;
         "com.isitempty.backend.oauthlogin.api.entity.user",
         "com.isitempty.backend.camera.entity",
         "com.isitempty.backend.toilet.entity",
-        "com.isitempty.backend.question.entity"
+        "com.isitempty.backend.question.entity",
+        "com.isitempty.backend.favorite.entity"
+
 })
 public class IsitemptyApplication {
     

@@ -29,7 +29,7 @@ public class ReviewController {
 
     // 유저 별 리뷰 조회
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getReviewsByUser(@PathVariable String userId) {
+    public ResponseEntity<?>getReviewsByUser(@PathVariable String userId) {
         return reviewService.getReviewsByUserId(userId);
     }
 
