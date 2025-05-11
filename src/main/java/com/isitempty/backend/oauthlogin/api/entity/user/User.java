@@ -1,8 +1,10 @@
 package com.isitempty.backend.oauthlogin.api.entity.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.isitempty.backend.favorite.entity.Favorite;
 import com.isitempty.backend.oauthlogin.oauth.entity.ProviderType;
 import com.isitempty.backend.oauthlogin.oauth.entity.RoleType;
+import com.isitempty.backend.review.entity.Review;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,6 +14,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -74,6 +78,16 @@ public class User {
     @Column(name = "MODIFIED_AT")
     @NotNull
     private LocalDateTime modifiedAt;
+    
+    // 리뷰와의 연관관계 (1:N) - 유저가 삭제되면 함께 삭제
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Review> reviews = new ArrayList<>();
+    
+    // 찜과의 연관관계 (1:N) - 유저가 삭제되면 함께 삭제
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Favorite> favorites = new ArrayList<>();
 
     public User(
             @NotNull @Size(max = 64) String userId,
