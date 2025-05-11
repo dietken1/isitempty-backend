@@ -29,7 +29,7 @@ public class FavoriteController {
     public ResponseEntity<?> getFavoritesByUserId(@PathVariable String userId) {
         return favoriteService.getFavoritesByUserId(userId);
     }
-    // 찜 삭제
+    // 찜 삭제!
     @DeleteMapping
     public ResponseEntity<?> deleteFavorite(@RequestParam String parkingLotId, Principal principal) {
         return favoriteService.deleteFavorite(principal.getName(), parkingLotId);
