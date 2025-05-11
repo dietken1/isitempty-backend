@@ -62,17 +62,20 @@ public class SecurityConfig {
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                         .requestMatchers(
                                 "/api/v1/users/signup",
+                                "/api/v1/users/createadmin",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/parking-lots/**",
                                 "/api/camera/**",
                                 "/api/toilet/**",
+                                "/api/reviews/**",
                                 "/oauth2/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/question").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
-                        .requestMatchers("/api/**").hasAuthority(RoleType.USER.getCode())
+                        .requestMatchers("/api/v1/users/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
+                        .requestMatchers("/api/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

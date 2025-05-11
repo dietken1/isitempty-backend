@@ -85,12 +85,19 @@ public class UserPrincipal implements OAuth2User, UserDetails, OidcUser {
     }
 
     public static UserPrincipal create(User user) {
+        SimpleGrantedAuthority simpleGrantedAuthority;
+        if (user.getRoleType().getCode().equals("ROLE_ADMIN")) {
+            simpleGrantedAuthority = new SimpleGrantedAuthority(RoleType.ADMIN.getCode());
+        } else {
+            simpleGrantedAuthority = new SimpleGrantedAuthority(RoleType.USER.getCode());
+        }
+
         return new UserPrincipal(
                 user.getUserId(),
                 user.getPassword(),
                 user.getProviderType(),
-                RoleType.USER,
-                Collections.singletonList(new SimpleGrantedAuthority(RoleType.USER.getCode()))
+                user.getRoleType(),
+                Collections.singletonList(simpleGrantedAuthority)
         );
     }
 
