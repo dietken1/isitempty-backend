@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/question").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
+                        .requestMatchers("/api/admin/users/**").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/v1/users/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
                         .requestMatchers("/api/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
                         .anyRequest().authenticated()
