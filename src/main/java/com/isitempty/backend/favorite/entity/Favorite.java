@@ -14,15 +14,15 @@ public class Favorite {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id; // 찜 고유 ID (String으로 변경)
+    private Long id; //long 타입으로 수정
 
     @ManyToOne
-    private User user; // 유저
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "parking_lot_id")
     private ParkingLot parkingLot; // 주차장
 
-    private boolean isFavorited = true; // 찜 여부 (true: 찜, false: 찜 해제)
+    //private boolean isFavorited = true; // 찜 여부 (true: 찜, false: 찜 해제)
 }
 

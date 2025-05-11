@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/favorites")
@@ -23,11 +24,10 @@ public class FavoriteController {
     }
 
     // 유저별 찜 조회
-    @GetMapping("/user")
-    public ResponseEntity<?> getFavoritesByUser(Principal principal) {
-        return favoriteService.getFavoritesByUser(principal.getName());
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getFavoritesByUserId(@PathVariable String userId) {
+        return favoriteService.getFavoritesByUserId(userId);
     }
-
     // 찜 삭제
     @DeleteMapping
     public ResponseEntity<?> deleteFavorite(@RequestParam String parkingLotId, Principal principal) {
