@@ -6,6 +6,7 @@ import com.isitempty.backend.parkinglot.entity.ParkingLot;
 import com.isitempty.backend.parkinglot.repository.ParkingLotRepository;
 import com.isitempty.backend.favorite.entity.Favorite;
 import com.isitempty.backend.favorite.repository.FavoriteRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +61,7 @@ public class FavoriteService {
     //}
 
     // 찜 삭제
+    @Transactional
     public ResponseEntity<?> deleteFavorite(String userId, String parkingLotId) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {
