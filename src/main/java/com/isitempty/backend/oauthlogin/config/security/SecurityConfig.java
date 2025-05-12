@@ -69,14 +69,14 @@ public class SecurityConfig {
                                 "/api/camera/**",
                                 "/api/toilet/**",
                                 "/api/reviews/**",
-                                "/oauth2/**",
-                                "/api/favorites/**"
+                                "/oauth2/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/question").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers(HttpMethod.GET, "/api/question/{id}").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers(HttpMethod.PUT, "/api/question/{id}").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers(HttpMethod.DELETE, "/api/question/{id}").hasAuthority(RoleType.ADMIN.getCode())
+                        .requestMatchers("/api/favorites/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
                         .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/admin/users/**").hasAuthority(RoleType.ADMIN.getCode())
                         .requestMatchers("/api/v1/users/**").hasAnyAuthority(RoleType.ADMIN.getCode(), RoleType.USER.getCode())
