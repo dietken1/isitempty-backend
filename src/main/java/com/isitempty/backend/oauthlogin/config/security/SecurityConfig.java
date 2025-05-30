@@ -70,6 +70,7 @@ public class SecurityConfig {
                                 "/api/toilet/**",
                                 "/api/reviews/**",
                                 "/oauth2/**"
+
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/question").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/question").hasAuthority(RoleType.ADMIN.getCode())
