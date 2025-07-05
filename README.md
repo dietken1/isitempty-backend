@@ -177,16 +177,6 @@ isitempty_backend/
    docker-compose up
    ```
 
-## 🧪 테스트
-
-```bash
-# 전체 테스트 실행
-./gradlew test
-
-# 특정 테스트 실행
-./gradlew test --tests "com.isitempty.backend.YourTest"
-```
-
 ## 🚀 배포
 
 GitHub Actions를 통한 자동 배포가 구성되어 있습니다:
@@ -204,14 +194,6 @@ GitHub Actions를 통한 자동 배포가 구성되어 있습니다:
 ## 📜 라이선스
 
 This project is licensed under the MIT License - see the LICENSE file for details
-
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## 📞 연락처
 
